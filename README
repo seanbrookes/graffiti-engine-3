@@ -1,0 +1,27 @@
+# Graffiti Engine
+
+This is the third iteration  
+
+## Getting Started
+
+```
+$ git clone https://github.com/seanbrookes/graffiti-engine-3.git
+```
+
+```
+$ npm install
+```
+
+To run the app you need to run a web server and an api server
+run in separate terminals:
+server:
+```
+$ node server/server
+```
+will start api server on port: 4004 by default
+
+client app
+```
+$ npm run start
+```
+will start application on port: 9000
