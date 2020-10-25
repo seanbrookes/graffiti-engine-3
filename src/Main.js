@@ -1,21 +1,37 @@
 import React, { useEffect, useState } from 'react';
+import Markdown from 'markdown-to-jsx';
+import { MarkdownEditor } from './components/MDEditor';
 import regeneratorRuntime from 'regenerator-runtime';
 import * as d3 from 'd3';
 import './styles.css';
-import CKEditor from '@ckeditor/ckeditor5-react';
-import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
+import TurndownService from 'turndown';
+// import CKEditor from '@ckeditor/ckeditor5-react';
+// import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import Link from '@ckeditor/ckeditor5-link/src/link';
 // import { data } from './data/backup';
 import ReactHtmlParser from 'react-html-parser';
 
 const postsServiceEndpoint = 'http://localhost:4004/api/posts';
 
+/**
+ * 
+ Coyote 180R https://www.youtube.com/watch?v=hX0uEiGp_fc
+ Troys place 14 custom jet boat walk around https://www.youtube.com/watch?v=fa_4H3_gw3o
+ Rockfish 150 https://www.rockfishboats.com/r150
+ riverpro https://www.youtube.com/watch?v=xwzh8VWtlZA
+ hdpe bonding adhesive: https://tbbonding.com/glue-polyethylene/
+ cast acrylic https://www.estreetplastics.com/Clear-Plexiglass-Acrylic-Sheets-1-Thick-s/31.htm
+ 
+
+ */
 
 const Main = () => {
   const [postsState, setPostsState] = useState({posts: {}, postsList: []});
   const [previewOn, setPreviewOn] = useState(false);
   const [currentPost, setCurrentPost] = useState({});
   const [sortState, setSortState] = useState({sortAscending: false, sortProp: 'lastUpdate'});
+  let timer;
+  let turndownService = new TurndownService();
 
   let editorInstance = null;
   const sortAlgo = (a, b) => {
@@ -30,33 +46,51 @@ const Main = () => {
 
   useEffect(() => {
     const fetchPosts = async () => {
-      const response = await fetch('http://localhost:4004/api/posts', {
+      const response = fetch('http://localhost:4004/api/posts', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         }
       })
-      .then(response => response.json())
+      .then((response) => {
+        console.log('response status', response.status);
+        if (response.status !== 200) {
+          // console.log('|');
+          // console.log('|  non 200 response', response.json());
+          // console.log('|');
+
+          throw response;
+        }
+        return response.json();
+      })
       .then(data => {
        // console.log('Success:', data);
-
-        const sortedCollection = data.sort(sortAlgo);
-        const postCollectionState = sortedCollection.reduce((result, item, index) => {
-          result[item.id] = item
-          return result
-        }, {});
-        setPostsState({posts: postCollectionState, postsList: sortedCollection});
+        if (data &&  data.sort) {
+          const sortedCollection = data.sort(sortAlgo);
+          const postCollectionState = sortedCollection.reduce((result, item, index) => {
+            result[item.id] = item
+            return result
+          }, {});
+          setPostsState({posts: postCollectionState, postsList: sortedCollection});  
+        } 
       })
       .catch((error) => {
-        console.error('Error:', error);
+        error.json().then((body) => {
+          console.error('| fetch posts error:', body);
+        });
       });
-      // return response.json();
     };
 
     fetchPosts();
 
     
   }, []);
+
+  useEffect(() => {
+    if (timer && !currentPost) {
+      stopAutoSave();
+    }
+  }, [currentPost]);
 
   const sortPosts = (event) => {
     console.log('|  sortProperty 1');
@@ -73,11 +107,13 @@ const Main = () => {
  
   }
 
-  const onEditPost = (event) => {
-    //console.log('EDIT POST', event.target.value);
-    const theCurrentPost = Object.assign({}, currentPost);
-    theCurrentPost.body = event.target.value;
-    // setCurrentPost(theCurrentPost);
+  const onEditPost = (postBody) => {
+    if (currentPost) {
+      // console.log('EDIT POST', postBody);
+      const theCurrentPost = Object.assign({}, currentPost);
+      theCurrentPost.body = postBody;
+      setCurrentPost(theCurrentPost);  
+    }
   }
   const updateTitle = (event) => {
     const currentTargetPost = Object.assign({}, currentPost);
@@ -92,38 +128,35 @@ const Main = () => {
   }
   const clearEditor = () => {
     setCurrentPost({});
+    stopAutoSave();
   }
-  const savePost = ({post}) => {
-    let targetPost = null;
-    if (post) {
-      targetPost = post;
+  const savePost = () => {
+    if (currentPost) {
+      const postToSever = async (post) => {
+        const response = await fetch('http://localhost:4004/api/posts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }, 
+          body: JSON.stringify(post) 
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log('post Success:', data);
+  
+        })
+        .catch((error) => {
+          console.error('post Error:', error);
+        });
+        // return response.json();
+      };
+      // post the post to api
+      console.log('|');
+      console.log('| postToServer ', currentPost);
+      console.log('|');
+      postToSever(currentPost);
+  
     }
-    else {
-      targetPost = currentPost;
-    }
-    const postToSever = async (targetPost) => {
-      const response = await fetch('http://localhost:4004/api/posts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }, 
-        body: JSON.stringify(targetPost) 
-      })
-      .then(response => response.json())
-      .then(data => {
-        console.log('post Success:', data);
-
-      })
-      .catch((error) => {
-        console.error('post Error:', error);
-      });
-      // return response.json();
-    };
-    if (!targetPost) {
-      return null;
-    }
-    // post the post to api
-    postToSever(targetPost);
   //  const targetPost = currentPost;
 
   }
@@ -150,12 +183,22 @@ const Main = () => {
 
         }
         else {
-          return response.json()
+          return response.json();
         }
       })
       .then(data => {
        console.log('Success:', data);
+
+      // let markdown = turndownService.turndown(JSON.stringify(data.body));
+      //  let markdown = data.body;
+      //  console.log('|');
+      //  console.log('|');
+      //  console.log('|     Markdown', markdown);
+      //  console.log('|');
+      //  console.log('|');
+      //  data.body = markdown;
        setCurrentPost(data);
+      // startAutoSave();
        // setPostsState({posts: postCollectionState, postsList: data});
       })
       .catch((error) => {
@@ -190,7 +233,34 @@ const Main = () => {
     };
     setCurrentPost(newPost);
   };
+  const saveCurrentPost = () => {
+    console.log('|');
+    console.log('| saveCurrentPost');
+    console.log('|');
+  }
 
+  const startAutoSave = () => {
+    if (currentPost && !timer) {
+      timer = setInterval(() => {
+      // editorInstance = editor;
+    //  console.log(editorInstance.getData());
+
+       // const theCurrentPost = Object.assign({}, currentPost);
+       // theCurrentPost.body = editorInstance.getData();
+        // setTimeout(() => {
+          savePost();
+        // }, 1);
+        // const postData = ClassicEditor.getData();
+        console.log('autosave current post', currentPost.body);
+      }, 10000);
+    }
+    else {
+      console.log('| Autosave is already running');
+    }
+  };
+  const stopAutoSave = () => {
+    if (timer) {clearTimeout(timer)}
+  };
   const postListItems = postsState && postsState.postsList && postsState.postsList.map((post) => {
     var s = new Date(post.lastUpdate).toLocaleString("en-US")
     return (
@@ -203,73 +273,20 @@ const Main = () => {
     );
 
   });
-  const handleEditorChange = (event, editor) => {
-    editorInstance = editor;
-   // console.log(editorInstance.getData());
-    const theCurrentPost = Object.assign({}, currentPost);
-    theCurrentPost.body = editorInstance.getData();
-    setTimeout(() => {
-      savePost(theCurrentPost);
-    }, 1);
 
-    //  const theCurrentPost = Object.assign({}, currentPost);
-    //  theCurrentPost.body = editor.getData();
-    //  setCurrentPost(theCurrentPost);
-    //  editor.editing.view.focus();
-    return;
-   };
-   const handleEditorBlur = (event, editor) => {
-    // console.log(editor.getData());
-     const theCurrentPost = Object.assign({}, currentPost);
-     theCurrentPost.body = editor.getData();
-     setCurrentPost(theCurrentPost);
-     editor.editing.view.focus();
-   };
-  const EditorComponent = ({post, onPreview}) => {
-
-    useEffect(() => {
-      let timer;
-      if (editorInstance) {
-        timer = setInterval(() => {
-          // editorInstance = editor;
-        //  console.log(editorInstance.getData());
-          const theCurrentPost = Object.assign({}, currentPost);
-          theCurrentPost.body = editorInstance.getData();
-          setTimeout(() => {
-            savePost(theCurrentPost);
-          }, 1);
-          // const postData = ClassicEditor.getData();
-          console.log('autosave current post');
-        }, 5000);
-  
-      }
-
-      return () => {if (timer) {clearTimeout(timer)}};
-    }, [])
-    if (!post) {
-      return null;
-    }
-    return (
-      <div>
-        <h3>{post.title}</h3>
-        <button onClick={clearEditor}>cancel</button><button onClick={onPreview}>preview</button> <button onClick={savePost}>Save</button>
-        <CKEditor 
-          editor={ ClassicEditor }
-          onChange={handleEditorChange}
-          onBlur={handleEditorBlur}
-          data={post.body}
-        />
-        <button onClick={savePost}>Save</button>
-      </div>
-    );
-  }
   return (
     <>
       <h2>Graffiti Engine</h2>
-      {previewOn && <div>{ReactHtmlParser(currentPost.body)}<button onClick={cancelPreview}>cancel</button></div>}
-      {currentPost && currentPost.id && <input type="text" value={currentPost.title} onChange={updateTitle}/>}
-      {currentPost && currentPost.id && <EditorComponent post={currentPost} onPreview={onPreview}/>}
-      {<button onClick={startNew}>New</button>}
+      {currentPost && currentPost.id && <>
+          <input type="text" value={currentPost.title} onChange={updateTitle}/>
+          <MarkdownEditor value={currentPost.body} onChange={onEditPost} onBlur={saveCurrentPost} />
+
+          <button onClick={savePost}>Save</button>
+          <button onClick={clearEditor}>cancel</button>
+        </>
+      }
+      <button onClick={startNew}>New</button>
+      {/* {currentPost && currentPost.id && <Markdown>{currentPost.body}</Markdown>} */}
       <h3>posts</h3>
       <table>
         <thead>

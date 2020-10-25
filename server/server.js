@@ -5,8 +5,6 @@ const bodyParser = require('body-parser');
 
 const PORT = 4004;
 
-const postDirectory = './data/';
-
 const server = express();
 server.use(bodyParser.urlencoded({ extended: true }));
 server.use(bodyParser.json());
@@ -15,7 +13,7 @@ server.use(cors())
 
 server.get('/api/doit', (req, res) => {
   console.log('made it this far');
-  const dir = './posts/';
+  const dir = './server/posts/';
 
   let alreadyExistingFiles = [];
   console.log('A');
@@ -27,7 +25,7 @@ server.get('/api/doit', (req, res) => {
       files.forEach(file => {
         // console.log('reading file', file);
         try {
-          const data = fs.readFileSync('./posts/' + file);
+          const data = fs.readFileSync('./server/posts/' + file);
         //  console.log('original ', data);
           const subjectPost = JSON.parse(data);
         //  console.log('original ', subjectPost.lastUpdate);
@@ -67,25 +65,48 @@ server.get('/api/doit', (req, res) => {
 
 
 server.get('/api/posts', (req, res) => {
-  const dir = './posts/';
+  const dir = './server/posts/';
+  let files;
+  let returnError;
+  res.contentType('application/json');
 
+  try {
+    files = fs.readdirSync(dir);
+  
+  }
+  catch(error) {
+    returnError = error;
+  }
 
-  const files = fs.readdirSync(dir);
   const postCollection = [];
 
-  // files object contains all files names
-  files.forEach(file => {
-    // console.log('reading file', file);
+  if (files) {
     try {
-      const data = fs.readFileSync('./posts/' + file);
-      postCollection.push(JSON.parse(data));
-    } catch (err) {
-        console.error(err);
+      // files object contains all files names
+      files.forEach(file => {
+        // console.log('reading file', file);
+        try {
+          const data = fs.readFileSync('./server/posts/' + file);
+          postCollection.push(JSON.parse(data));
+        } catch (err) {
+          console.error('| build list of posts', err);
+          returnError = err;
+        }
+      });
     }
+    catch(error) {
+      console.log('| Error iterating over the files', error);
+      returnError = error;
+    }
+  }
 
-  });
-
-  res.send(JSON.stringify(postCollection));
+  if (returnError) {
+    res.status(500)
+    res.send({error: returnError.message});
+  }
+  else {
+    res.send(JSON.stringify(postCollection));
+  }
 
 
 
@@ -169,7 +190,7 @@ server.get('/api/posts', (req, res) => {
 });
 server.get('/api/post/:id', (req, res) => {
   const postId = req.params.id;
-  const path = `./posts/${postId}.json`;
+  const path = `./server/posts/${postId}.json`;
   if (postId && fs.existsSync(path)) {
     fs.readFile(path, function(err, data) { 
       
@@ -227,7 +248,7 @@ server.post('/api/posts', (req, res) => {
   /*
   write the file
   */
- fs.writeFile(`./posts/${freshPost.id}.json`, JSON.stringify(freshPost), err => { 
+ fs.writeFile(`./server/posts/${freshPost.id}.json`, JSON.stringify(freshPost), err => { 
       
     // Checking for errors 
     if (err) throw err;  
