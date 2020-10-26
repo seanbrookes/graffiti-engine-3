@@ -1,6 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { PostsContextProvider } from './context/PostsContext';
 
 import {
   RecoilRoot,
@@ -9,9 +8,5 @@ import {
 import { Main } from './Main';
 
 ReactDOM.render(
-  <RecoilRoot>
-    <PostsContextProvider>
-      <Main />
-    </PostsContextProvider>
-  </RecoilRoot>, 
+  <Main />, 
   document.getElementById('root'));

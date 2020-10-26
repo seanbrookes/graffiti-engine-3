@@ -1,0 +1,7 @@
+{
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 2000,
+  "files.insertFinalNewline": true,
+  "editor.tabSize": 2,
+  "workbench.editor.enablePreview": false
+}

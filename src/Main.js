@@ -1,6 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useContext } from 'react';
+import styled from "styled-components";
 import Markdown from 'markdown-to-jsx';
 import { MarkdownEditor } from './components/MDEditor';
+import { MarkedInput } from "./components";
+import { Preview } from "./components";
+import EditorContext from "./editorContext";
 import regeneratorRuntime from 'regenerator-runtime';
 import * as d3 from 'd3';
 import './styles.css';
@@ -25,14 +29,41 @@ const postsServiceEndpoint = 'http://localhost:4004/api/posts';
 
  */
 
+const AppContainer = styled.div`
+width: 100%;
+display: flex;
+flex-direction: column;
+align-items: center;
+`;
+
+const Title = styled.div`
+font-size: 25px;
+font-weight: 700;
+font-family: "Lato", sans-serif;
+margin-bottom: 1em;
+`;
+
+const EditorContainer = styled.div`
+width: 1200px;
+min-height: 200px;
+display: flex;
+`;
+
 const Main = () => {
   const [postsState, setPostsState] = useState({posts: {}, postsList: []});
   const [previewOn, setPreviewOn] = useState(false);
   const [currentPost, setCurrentPost] = useState({});
   const [sortState, setSortState] = useState({sortAscending: false, sortProp: 'lastUpdate'});
-  let timer;
-  let turndownService = new TurndownService();
 
+  let timer;
+  const inputRef = useRef();
+  let turndownService = new TurndownService();
+  const [markdownText, setMarkdownText] = useState('');
+
+  const contextValue = {
+    markdownText,
+    setMarkdownText
+  };
   let editorInstance = null;
   const sortAlgo = (a, b) => {
     if (sortState.sortAscending) {
@@ -107,14 +138,7 @@ const Main = () => {
  
   }
 
-  const onEditPost = (postBody) => {
-    if (currentPost) {
-      // console.log('EDIT POST', postBody);
-      const theCurrentPost = Object.assign({}, currentPost);
-      theCurrentPost.body = postBody;
-      setCurrentPost(theCurrentPost);  
-    }
-  }
+
   const updateTitle = (event) => {
     const currentTargetPost = Object.assign({}, currentPost);
     currentTargetPost.title = event.target.value;
@@ -154,7 +178,11 @@ const Main = () => {
       console.log('|');
       console.log('| postToServer ', currentPost);
       console.log('|');
+      if (currentPost &&  markdownText) {
+        currentPost.body = markdownText;
+      }
       postToSever(currentPost);
+      setCurrentPost(currentPost);
   
     }
   //  const targetPost = currentPost;
@@ -198,6 +226,7 @@ const Main = () => {
       //  console.log('|');
       //  data.body = markdown;
        setCurrentPost(data);
+       setMarkdownText(data.body);
       // startAutoSave();
        // setPostsState({posts: postCollectionState, postsList: data});
       })
@@ -261,6 +290,17 @@ const Main = () => {
   const stopAutoSave = () => {
     if (timer) {clearTimeout(timer)}
   };
+
+
+
+  const onEditPost = (postBody) => {
+    if (currentPost) {
+      // console.log('EDIT POST', postBody);
+      // const theCurrentPost = Object.assign({}, currentPost);
+      // theCurrentPost.body = postBody;
+      setCurrentPost((prevState) => {return {...currentPost, body: postBody}});  
+    }
+  };
   const postListItems = postsState && postsState.postsList && postsState.postsList.map((post) => {
     var s = new Date(post.lastUpdate).toLocaleString("en-US")
     return (
@@ -275,12 +315,16 @@ const Main = () => {
   });
 
   return (
-    <>
+    <EditorContext.Provider value={contextValue}>
+      <AppContainer>
       <h2>Graffiti Engine</h2>
+
       {currentPost && currentPost.id && <>
           <input type="text" value={currentPost.title} onChange={updateTitle}/>
-          <MarkdownEditor value={currentPost.body} onChange={onEditPost} onBlur={saveCurrentPost} />
-
+          <EditorContainer>
+            <MarkedInput />
+            <Preview />
+          </EditorContainer>
           <button onClick={savePost}>Save</button>
           <button onClick={clearEditor}>cancel</button>
         </>
@@ -303,7 +347,8 @@ const Main = () => {
           {postListItems}
         </tbody>
       </table>
-    </>
+      </AppContainer>
+      </EditorContext.Provider>
   );
 };
 
