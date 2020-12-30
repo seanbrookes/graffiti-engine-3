@@ -4,9 +4,10 @@ import ReactMarkdown from "react-markdown";
 import editorContext from "../editorContext";
 
 const Container = styled.div`
-  width: 30%;
-  padding: 13px;
-  font-family: "Lato", sans-serif;
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #eeeeee;
+  border-radius: 25px;
 `;
 
 const Title = styled.div`
@@ -18,10 +19,8 @@ const Title = styled.div`
 `;
 
 const ResultArea = styled.div`
-  width: 500px;
   white-space: normal;
-  overflow-x: auto;
-  border: none;
+  border: 0;
   font-size: 17px;
 `;
 
@@ -30,7 +29,6 @@ export function Preview(props) {
 
   return (
     <Container>
-      <Title>Converted Text</Title>
       <ResultArea>
         <ReactMarkdown source={markdownText} />
       </ResultArea>

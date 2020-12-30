@@ -3,11 +3,8 @@ import styled from "styled-components";
 import editorContext from "../editorContext";
 
 const Container = styled.div`
-  width: 70%;
-  min-height: 200px;
-  padding: 13px;
-  border-right: 1.5px solid rgba(15, 15, 15, 0.4);
-  font-family: "Lato", sans-serif;
+  padding: 12px 0 0 0;
+  border: 0;
 `;
 
 const Title = styled.div`
@@ -20,10 +17,9 @@ const Title = styled.div`
 
 const TextArea = styled.textarea`
   width: 100%;
-  height: 500px;
-  resize: none;
-  border: none;
-  outline: none;
+  min-height: 140px;
+  border: 1px solid #dddddd;
+  padding: 13px;
   font-size: 17px;
 `;
 
@@ -37,7 +33,6 @@ export function MarkedInput(props) {
 
   return (
     <Container>
-      <Title>Markdown Text</Title>
       <TextArea onChange={onInputChange} value={markdownText} />
     </Container>
   );
