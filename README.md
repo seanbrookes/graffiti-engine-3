@@ -45,7 +45,7 @@ $ npm run start
 ```
 will start application on port: 9000
 
-## publishing
+## Publishing
 
 There are 2 template files in the ./host-templates folder.  One is for the home page to help display appropriate content such as post summary or ensure there is content there even if no posts have been published for a while.
 
