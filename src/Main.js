@@ -17,18 +17,6 @@ import ReactHtmlParser from 'react-html-parser';
 
 const postsServiceEndpoint = 'http://localhost:4004/api/posts';
 
-/**
- * 
- Coyote 180R https://www.youtube.com/watch?v=hX0uEiGp_fc
- Troys place 14 custom jet boat walk around https://www.youtube.com/watch?v=fa_4H3_gw3o
- Rockfish 150 https://www.rockfishboats.com/r150
- riverpro https://www.youtube.com/watch?v=xwzh8VWtlZA
- hdpe bonding adhesive: https://tbbonding.com/glue-polyethylene/
- cast acrylic https://www.estreetplastics.com/Clear-Plexiglass-Acrylic-Sheets-1-Thick-s/31.htm
- 
-
- */
-
 const AppContainer = styled.div`
   width: 100%;
   display: flex;
@@ -538,7 +526,7 @@ const Main = () => {
       <AppContainer>
         <header style={{width: '100%',  display: 'flex', justifyContent:'space-between'}}>
           <h2 style={{marginLeft: '12px', fontSize: '16px', color: '#777777'}}>Graffiti Engine</h2>
-          <button style={{fontSize: '16px', color: 'blue', background: 'transparent', border: 0, display: 'inline-block', marginRight: '12px'}} onClick={startNew}>New</button>
+          <button style={{cursor: 'pointer', fontSize: '16px', color: 'blue', background: 'transparent', border: 0, display: 'inline-block', marginRight: '12px'}} onClick={startNew}>New</button>
         </header>
 
         {/* 
