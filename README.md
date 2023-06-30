@@ -14,7 +14,7 @@ When the target app recieves the post it creates a new file in a relative path f
 The logic is pretty simple for the taget application and is designed to be easy to setup and get working.  
 All it needs is a web server running under an account with permissions to create folders and files.
 
-Currently the target host files are written in PHP as that is pretty universal for public web hosting servers however it could easily be rewritten in node or other languages
+Currently the target host files for receiving and processing the publish requests from source are written in PHP as that is pretty universal for public web hosting servers however it could easily be rewritten in node or other languages
 
 The underlying philosophy behind this app is to make it easy to capture ideas and notes and then provide a simple way to publish and republish from the local source.
 
@@ -31,15 +31,15 @@ $ git clone https://github.com/seanbrookes/graffiti-engine-3.git
 $ npm install
 ```
 
-To run the app you need to run a web server and an api server
-run in separate terminals:
-server:
+To run the app you need to run a web server and an api server in separate terminals:
+
+## Server:
 ```
 $ node server/server
 ```
 will start api server on port: 4004 by default
 
-client app
+## client app
 ```
 $ npm run start
 ```

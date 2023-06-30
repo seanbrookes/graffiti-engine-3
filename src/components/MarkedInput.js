@@ -1,6 +1,6 @@
-import React, { useContext } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import styled from "styled-components";
-import editorContext from "../editorContext";
+import { useEditorContext } from "../editorContext";
 
 const Container = styled.div`
   padding: 12px 0 0 0;
@@ -24,11 +24,22 @@ const TextArea = styled.textarea`
 `;
 
 export function MarkedInput(props) {
-  const { markdownText, setMarkdownText } = useContext(editorContext);
+  const { currentPost, setCurrentPost } = useEditorContext();
+  const [ markdownText, setMarkdownText ] = useState('');
+
+  useEffect(() => {
+    if (currentPost) {
+      const newCopy = {...currentPost};
+      setMarkdownText(newCopy.body);
+    }
+
+  }, []);
 
   const onInputChange = e => {
     const newValue = e.currentTarget.value;
     setMarkdownText(newValue);
+    currentPost.body = newValue;
+    setCurrentPost(currentPost);
   };
 
   return (
