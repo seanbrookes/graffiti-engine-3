@@ -4,7 +4,7 @@ import Markdown from 'markdown-to-jsx';
 // import { MarkdownEditor } from './components/MDEditor';
 import { MarkedInput } from "./components";
 import { Preview } from "./components";
-import EditorContext from "./editorContext";
+import { EditorProvider, useEditorContext } from "./editorContext";
 import regeneratorRuntime from 'regenerator-runtime';
 import * as d3 from 'd3';
 import './styles.css';
@@ -125,10 +125,25 @@ export const PublishForm = ({post, onSubmit, onCancel}) => {
   );
 };
 
-const Main = () => {
+const App = ({children}) => {
+  return (
+    <EditorProvider>
+      <Main />
+    </EditorProvider>    
+  );
+};
+export default App;
+
+export const Main = () => {
+  // const [currentPost, setCurrentPost] = useContext(EditorContext);
+  // useEditorContext
+  const {currentPost, setCurrentPost} = useEditorContext();
+  const {postList, setPostList} = useEditorContext();
+
   const [postsState, setPostsState] = useState({posts: {}, postsList: []});
   const [previewOn, setPreviewOn] = useState(false);
-  const [currentPost, setCurrentPost] = useState({});
+
+ // const [currentPost, setCurrentPost] = useState({});
   const [sortState, setSortState] = useState({sortAscending: false, sortProp: 'lastUpdate'});
   const [isPreview, setIsPreview] = useState(false);
   const [isShowPublishModal, setIsShowPublishModal] = useState(false);
@@ -138,10 +153,7 @@ const Main = () => {
 
   const [markdownText, setMarkdownText] = useState('');
 
-  const contextValue = {
-    markdownText,
-    setMarkdownText
-  };
+
   let editorInstance = null;
   const sortAlgo = (a, b) => {
     if (sortState.sortAscending) {
@@ -181,6 +193,7 @@ const Main = () => {
             return result
           }, {});
           setPostsState({posts: postCollectionState, postsList: sortedCollection});  
+          setPostList(sortedCollection);
         } 
       })
       .catch((error) => {
@@ -260,11 +273,7 @@ const Main = () => {
       console.log('|');
       console.log('| postToServer ', currentPost);
       console.log('|');
-      if (currentPost &&  markdownText) {
-        currentPost.body = markdownText;
-      }
       postToSever(currentPost);
-      setCurrentPost(currentPost);
   
     }
   //  const targetPost = currentPost;
@@ -306,7 +315,6 @@ const Main = () => {
   const selectPost = (event) => {
     const id = event.target.value;
     console.log(`|  id[${id}]`);
-    const targetPost = (postsState.posts && postsState.posts[id]) ? postsState.posts[id] : {};
 
     const fetchPost = async (id) => {
       const response = await fetch(`http://localhost:4004/api/post/${id}`, {
@@ -319,7 +327,8 @@ const Main = () => {
         if (!response.ok) {
           console.log('not ok', response.status);
           if (response.status === 404) {
-            return targetPost;
+            console.warn(`| No post returned for id: [${id}]`);
+            return {};
           }
 
         }
@@ -446,14 +455,14 @@ const Main = () => {
   };
 
 
-  const onEditPost = (postBody) => {
-    if (currentPost) {
-      // console.log('EDIT POST', postBody);
-      // const theCurrentPost = Object.assign({}, currentPost);
-      // theCurrentPost.body = postBody;
-      setCurrentPost((prevState) => {return {...currentPost, body: postBody}});  
-    }
-  };
+  // const onEditPost = (postBody) => {
+  //   if (currentPost) {
+  //     // console.log('EDIT POST', postBody);
+  //     // const theCurrentPost = Object.assign({}, currentPost);
+  //     // theCurrentPost.body = postBody;
+  //     setCurrentPost((prevState) => {return {...currentPost, body: postBody}});  
+  //   }
+  // };
 
 
   const onSubmitPublishPost = (post) => {
@@ -493,11 +502,11 @@ const Main = () => {
     console.log('|  Cancel publish post', post.title);
   };
 
-  const postGridCells = postsState && postsState.postsList && postsState.postsList.map((post, index) => {
+  const postGridCells = postList && postList.map((post, index) => {
     //var s = new Date(post.lastUpdate).toLocaleString("en-US")
     var s = new Date(post.lastUpdate);
     return (
-      <>
+      <React.Fragment key={post.id}>
         <div>
           <select value={''} onChange={(event) => onDoSomethingToAPost(event, post)}>
             <option value=''></option>
@@ -511,18 +520,44 @@ const Main = () => {
           <div>{`${s.toDateString()}`}</div>
         </div>
         <div>
-          <button style={{fontSize: '16px', cursor: 'pointer', textDecoration: 'underline', border: 0, background: 'transparent', color: 'blue'}} onClick={selectPost} value={post.id}>{post.title}</button>
+          <button onClick={selectPost} value={post.id} style={{fontSize: '16px', cursor: 'pointer', textDecoration: 'underline', border: 0, background: 'transparent', color: 'blue'}}>{post.title}</button>
         </div>
-      </>
+      </React.Fragment>
     );
 
   });
   const toggleEditorViewText = isPreview ? 'edit' : 'prev';
 
 
+  let editorElement = null;
+  if (currentPost && currentPost.id) {
+    editorElement = (
+      <EditorContainer>
+        {/* TITLE SECTION */}
+        <div style={{display: 'flex', width: '100%', justifyContent: 'flex-start'}}>
+          <TitleInput type="text" value={currentPost.title} onChange={updateTitle} />
+          <button onClick={onTogglePreview} style={{background: 'transparent', border: '1px solid #dddddd', cursor: 'pointer', display: 'inline-block', padding: '.3rem', borderRadius: '10px'}} >{toggleEditorViewText}</button> 
+        </div>  
+
+        {/*
+
+          EDITOR / PREVIEW
+
+        */}
+        {isPreview ? <Preview /> : <MarkedInput />}
+
+        {/* BOTTOM BUTTONS */}
+        <div style={{padding: '1rem', display: 'flex', justifyContent:'flex-end'}}>
+          <div>{currentPost.id}</div>
+          <button style={{cursor: 'pointer', fontSize: '16px', background:'transparent', border: 0, display:'inline-block', margin: '16px'}} onClick={clearEditor}>cancel</button>
+          <SaveButton onClick={savePost}>Save</SaveButton>
+        </div>
+
+      </EditorContainer>
+    );
+  }
 
   return (
-    <EditorContext.Provider value={contextValue}>
       <AppContainer>
         <header style={{width: '100%',  display: 'flex', justifyContent:'space-between'}}>
           <h2 style={{marginLeft: '12px', fontSize: '16px', color: '#777777'}}>Graffiti Engine</h2>
@@ -534,23 +569,7 @@ const Main = () => {
           EDITOR
 
         */}
-        {currentPost && currentPost.id && <EditorContainer>
-          <div style={{display: 'flex', width: '100%', justifyContent: 'flex-start'}}>
-            <TitleInput type="text" value={currentPost.title} onChange={updateTitle} />
-            <button onClick={onTogglePreview} style={{background: 'transparent', border: '1px solid #dddddd', cursor: 'pointer', display: 'inline-block', padding: '.3rem', borderRadius: '10px'}} >{toggleEditorViewText}</button> 
-          </div>  
-          {/*
-
-            EDITOR / PREVIEW
-
-          */}
-          {isPreview ? <Preview /> : <MarkedInput />}
-          <div style={{padding: '1rem', display: 'flex', justifyContent:'flex-end'}}>
-            <button style={{fontSize: '16px', background:'transparent', border: 0, display:'inline-block', margin: '16px'}} onClick={clearEditor}>cancel</button>
-            <SaveButton onClick={savePost}>Save</SaveButton>
-          </div>
-        </EditorContainer>
-      }
+        {currentPost && currentPost.id && editorElement}
 
       {/* 
       
@@ -587,8 +606,6 @@ const Main = () => {
         </Modal>
       </div>
       </AppContainer>
-      </EditorContext.Provider>
   );
 };
 
-export { Main };

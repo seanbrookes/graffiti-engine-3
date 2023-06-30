@@ -5,8 +5,8 @@ import {
   RecoilRoot,
 } from 'recoil';
 
-import { Main } from './Main';
+import App from './Main';
 
 ReactDOM.render(
-  <Main />, 
+  <App />, 
   document.getElementById('root'));

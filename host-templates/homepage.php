@@ -16,12 +16,12 @@
 	// $pubFileName = $_POST['PostSlug'] . ".html";
 
   $filedir = "/";
-  $filepath = "index-xxx.html";
+  $filepath = "index.html";
 
    echo $_POST['PostBody'];
 	$apiKey = $_POST['apiKey'];
 	
-	if ($apiKey = "sdfaersdf23esdfa33adfasdfwdrrwdfs5"){
+	if ($apiKey = "[[ add inbox key here ]]"){
 
 		$bIsFolderAvailable = true;
 
